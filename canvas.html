@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+<body onload='draw()'>
+  <canvas width="150" height="150">
+    current stock price: $3.15 +0.15
+  </canvas>
+  <script>
+    function draw() {
+      const canvas = document.querySelector('canvas');
+      if (canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+
+        ctx.beginPath();
+        ctx.moveTo(25,25);
+        ctx.lineTo(105, 25);
+        ctx.lineTo(25, 105);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(110, 25);
+        ctx.lineTo(110, 105);
+        ctx.lineTo(30, 105);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+  </script>
+</body>
+</html>

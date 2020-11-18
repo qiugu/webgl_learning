@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    canvas {
+      width: 300px;
+      height: 300px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <canvas id="canvas1"></canvas>
+  <canvas id="canvas2"></canvas>
+  <script type="module" src="./lib.js"></script>
+  <script type="module">
+    import Vector2D, { 
+      draw, 
+      regularShape, 
+      arc,
+      parabola
+    } from './lib.js';
+
+    const points1 = regularShape(12, 1, -1, 0.5);
+    const points2 = arc(0, 0, 1);
+    const points3 = parabola(0, 0, 0.6, -1, 1);
+    draw('#canvas', points1);
+    draw('#canvas1', points2);
+    draw('#canvas2', points3);
+  </script>
+</body>
+
+</html>
