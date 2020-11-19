@@ -1,4 +1,26 @@
-
+const TAU_SEGMENTS = 100; // 整圆的线段数
+const TAU = Math.PI * 2;
+const LINE_SEGMENTS = 60;
+/**
+ * 绘制椭圆
+ * @param {*} x0 
+ * @param {*} y0 
+ * @param {*} radiusX 
+ * @param {*} radiusY 
+ * @param {*} startAng 
+ * @param {*} endAng 
+ */
+export function ellipse(x0, y0, radiusX, radiusY, startAng = 0, endAng = Math.PI * 2) {
+  const ang = Math.min(TAU, endAng - startAng);
+  const ret = ang === TAU ? [] : [x0, y0];
+  const segments = Math.round(LINE_SEGMENTS * ang / TAU);
+  for (let i = 0; i <= segments; i++) {
+    const x = x0 + radiusX * Math.cos(startAng + ang * i / segments);
+    const y = y0 + radiusY * Math.sin(startAng + ang * i / segments);
+    ret.push(x, y);
+  }
+  return new Float32Array(ret);
+}
 /**
  * 绘制抛物线
  * @param {*} x0 
@@ -7,7 +29,6 @@
  * @param {*} min 
  * @param {*} max 
  */
-const LINE_SEGMENTS = 60;
 export function parabola(x0, y0, p, min, max) {
   const ret = [];
   for (let i = 0; i < LINE_SEGMENTS; i++) {
@@ -28,8 +49,6 @@ export function parabola(x0, y0, p, min, max) {
  * @param {number} startAng 圆的起始角度
  * @param {number} endAng 圆的结束角度
  */
-const TAU_SEGMENTS = 100; // 整圆的线段数
-const TAU = Math.PI * 2;
 export function arc(x0, y0, radius, startAng = 0, endAng = Math.PI * 2) {
   const ang = Math.min(TAU, endAng - startAng);
   const ret = ang === TAU ? [] : [x0, y0];
@@ -68,7 +87,7 @@ export function regularShape(edges = 3, x, y, step) {
   return new Float32Array(ret);
 }
 
-export function draw(dom, points) {
+export function webglDraw(dom, points) {
   // 1. 获取webgl上下文
   const canvas = document.querySelector(dom);
   const gl = canvas.getContext('webgl');
@@ -126,6 +145,45 @@ export function draw(dom, points) {
   // 8. 执行着色器程序完成绘制
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.LINES, 0, points.length / 2);
+}
+
+export function canvasDraw(points, dom, {
+  strokeStyle = 'black',
+  fillStyle = null,
+  close = false
+} = {}) {
+  const canvas = document.querySelector(dom);
+  const context = canvas.getContext('2d');
+  context.translate(250, 10);
+  context.strokeStyle = strokeStyle;
+  context.beginPath();
+  context.moveTo(...points[0]);
+  for (let i = 1; i < points.length; i++) {
+    context.lineTo(...points[i]);
+  }
+  if (close) context.closePath();
+  if (fillStyle) {
+    context.fillStyle = fillStyle;
+    context.fill();
+  }
+  context.stroke();
+}
+
+export function parametric(xFunc, yFunc) {
+  return function(start, end, seg = 100, ...args) {
+    const points = [];
+    for (let i = 0; i <= seg; i++) {
+      const p = i / seg;
+      const t = start * (1 - p) + end * p;
+      const x = xFunc(t, ...args);
+      const y = yFunc(t, ...args);
+      points.push([x, y]);
+    }
+    return {
+      draw: canvasDraw.bind(null, points),
+      points
+    }
+  }
 }
 
 export default class Vector2D extends Array {

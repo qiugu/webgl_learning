@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    canvas {
+      width: 500px;
+      height: 500px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+  <canvas id="canvas1"></canvas>
+  <canvas id="canvas2"></canvas>
+  <canvas id="canvas3"></canvas>
+  <canvas id="canvas4"></canvas>
+  <canvas id="canvas5"></canvas>
+  <canvas id="canvas6"></canvas>
+  <script type="module" src="./lib.js"></script>
+  <script type="module">
+    import Vector2D, {
+      webglDraw,
+      regularShape,
+      arc,
+      parabola,
+      ellipse,
+      parametric
+    } from './lib.js';
+
+    const points1 = regularShape(12, 1, -1, 0.5);
+    const points2 = arc(0, 0, 1);
+    const points3 = parabola(0, 0, 0.6, -1, 1);
+    const points4 = ellipse(0, 0, 0.4, 0.8);
+    webglDraw('#canvas', points1);
+    webglDraw('#canvas1', points2);
+    webglDraw('#canvas2', points3);
+    webglDraw('#canvas3', points4);
+
+    const para = parametric(
+      t => 25 * t,
+      t => 25 * t ** 2
+    );
+    para(-5.5, 5.5).draw('#canvas4');
+    const helical = parametric(
+      (t, l) => l * t * Math.cos(t),
+      (t, l) => l * t * Math.sin(t)
+    );
+    helical(0, 500, 5000, 5).draw('#canvas5', { strokeStyle: 'blue' });
+
+    const star = parametric(
+      (t, l) => l * Math.cos(t) ** 3,
+      (t, l) => l * Math.sin(t) ** 3,
+    );
+
+    star(0, Math.PI * 2, 50, 150).draw('#canvas6', { strokeStyle: 'red' });
+  </script>
+</body>
+
+</html>
