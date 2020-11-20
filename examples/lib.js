@@ -154,7 +154,7 @@ export function canvasDraw(points, dom, {
 } = {}) {
   const canvas = document.querySelector(dom);
   const context = canvas.getContext('2d');
-  context.translate(250, 10);
+  // context.translate(250, 10);
   context.strokeStyle = strokeStyle;
   context.beginPath();
   context.moveTo(...points[0]);

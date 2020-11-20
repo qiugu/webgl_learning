@@ -50,14 +50,14 @@
       (t, l) => l * t * Math.cos(t),
       (t, l) => l * t * Math.sin(t)
     );
-    helical(0, 500, 5000, 5).draw('#canvas5', { strokeStyle: 'blue' });
+    helical(0, 500, 5000, 5).draw('#canvas4', { strokeStyle: 'blue' });
 
     const star = parametric(
       (t, l) => l * Math.cos(t) ** 3,
       (t, l) => l * Math.sin(t) ** 3,
     );
 
-    star(0, Math.PI * 2, 50, 150).draw('#canvas6', { strokeStyle: 'red' });
+    star(0, Math.PI * 2, 50, 150).draw('#canvas4', { strokeStyle: 'red' });
   </script>
 </body>
 
