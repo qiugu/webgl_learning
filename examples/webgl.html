@@ -164,6 +164,20 @@
       return cubeVertexBuffer;
     }
 
+    function initTextures(gl) {
+      const cubeTextures = gl.createTextures();
+      const cubeImage = new Image();
+      cubeImage.onload = () => {
+        handleTextureLoaded(gl, cubeImage, cubeTextures);
+      }
+      cubeImage.src = '../assets/monk-man.dd70e0f5.png';
+    }
+
+    function handleTextureLoaded(gl, image, texture) {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image); 
+    }
+
     function main() {
       const canvas = document.querySelector('canvas');
       const gl = canvas.getContext('webgl');
