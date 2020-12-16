@@ -1,3 +1,6 @@
+import { Indexer, IndexerL2R } from "./IEnumerator";
+
+export type NodeCallback<T> = (node: TreeNode<T>) => void;
 export class TreeNode<T> {
     // 当前节点的父节点，如果当前节点就是根节点，则其父节点是undefined
     private _parent: TreeNode<T> | undefined;
@@ -105,7 +108,70 @@ export class TreeNode<T> {
         return this.addChildAt(child, this._children.length);
     }
 
-    getChildAt(index: number): TreeNode<T> | undefined {
-        throw new Error("Method not implemented.");
+    public get parent(): TreeNode<T> | undefined {
+        return this._parent;
+    }
+
+    public getChildAt(index: number): TreeNode<T> | undefined {
+        if (this._children === undefined) {
+            return undefined;
+        }
+        if (index < 0 || index > this._children.length) {
+            return undefined;
+        }
+        return this._children[index];
+    }
+
+    public get childCount(): number {
+        if (this._children !== undefined) {
+            return this._children.length;
+        } else {
+            return 0;
+        }
+    }
+
+    public hasChild(): boolean {
+        return this._children !== undefined && this._children.length > 0;
+    }
+
+    public get root(): TreeNode<T> | undefined {
+        let curr: TreeNode<T> | undefined = this;
+        while(curr !== undefined && curr.parent !== undefined) {
+            curr = curr.parent;
+        }
+        return curr;
+    }
+
+    public get depth(): number {
+        let curr: TreeNode<T> | undefined = this;
+        let level: number = 0;
+        while(curr !== undefined && curr.parent !== undefined) {
+            curr = curr.parent;
+            level++;
+        }
+        return level;
+    }
+
+    public visit(
+        preOrderFunc: NodeCallback<T> | null = null,
+        postOrderFunc: NodeCallback<T> | null = null,
+        indexFunc: Indexer = IndexerL2R
+    ): void {
+        if (preOrderFunc !== null) {
+            preOrderFunc(this);
+        }
+
+        let arr: Array<TreeNode<T>> | undefined = this._children;
+        if (arr !== undefined) {
+            for (let i: number = 0; i < arr.length; i++) {
+                let child: TreeNode<T> | undefined = this.getChildAt(indexFunc(arr.length, i));
+                if (child !== undefined) {
+                    child.visit(preOrderFunc, postOrderFunc, indexFunc);
+                }
+            }
+        }
+        if (postOrderFunc !== null) {
+            postOrderFunc(this);
+        }
     }
 }
