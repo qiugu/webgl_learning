@@ -8,6 +8,18 @@
 <body>
   <canvas width="400" height="400"></canvas>
   <script>
+
+    function loadImage(src) {
+      return new Promise(resolve => {
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.src = src;
+        image.onload = () => {
+          resolve(image);
+        }
+      })
+    }
+
     // 加载着色器
     function loadShader(gl, type, source) {
       const shader = gl.createShader(type);
@@ -40,41 +52,87 @@
     }
 
     // 初始化缓冲区数据
-    function initBufferData(gl, vertex, fragment) {
+    function initBufferData(gl, buffer) {
 
       const vertexBuffer = gl.createBuffer();
+
+      const n = 4;
+
+      const fsize = vertexBuffer.BYTES_PER_ELEMENT;
+
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-      gl.bindBufferData(gl.ARRAY_BUFFER, new Float32Array(vertex), gl.STATIC_DRAW);
-      gl.vertexAttribPointer(vertex, 0, gl.FLOAT, false, 0, 0);
-      gl.enableAttribArray(vertex);
-
-      const fragmentBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, fragmentBuffer);
-      gl.bindBufferData(gl.ARRAY_BUFFER, new Float32Array(fragment), gl.STATIC_DRAW);
-      gl.vertexAttribPointer(fragment, 0, gl.FLOAT, false, 0, 0);
-      gl.enableAttribArray(fragment);
-
+      gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+      
       return {
         position: vertexBuffer,
-        color: fragmentBuffer
+        fsize,
+        n
       }
     }
 
     // 将缓冲区数据写入shader着色器程序中
-    function drawScene(gl, program, buffers) {
-      
+    function drawScene(gl, program, varible, index, size) {
+
+      const pos = gl.getAttribLocation(program, varible);
+
+      // 开启访问变量vTexCoord
+      gl.vertexAttribPointer(pos, index, gl.FLOAT, false, size*4.0, size*2.0);
+      gl.enableVertexAttribArray(pos);
+
+    }
+
+    // 加载纹理
+    function loadTexture(gl, program, imageSource, name, index) {
+      const texture = gl.createTexture();
+
+      if (index == 0){
+          gl.activeTexture(gl.TEXTURE0);
+      } else {
+          gl.activeTexture(gl.TEXTURE1);
+      }
+
+      gl.bindTexture(gl.TEXTURE_2D,texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource);
+      const locations = gl.getUniformLocation(program, name);
+
+      gl.uniform1i(locations, index);
+
+      return texture;
     }
 
     // 绘制
-    function render(gl, vertex, fragment) {
+    async function render(gl, vertex, fragment) {
       const program = initShader(gl, vertex, fragment);
+
+      const buffer = new Float32Array([
+        -0.5, 0.5, 0.0, 1.0,
+        -0.5,-0.5, 0.0, 0.0,
+        0.5, 0.5, 1.0, 1.0,
+        0.5,-0.5, 1.0, 0.0
+      ]);
+
+      const shaderInfo = initBufferData(gl, buffer);
+
+      const image1 = await loadImage('../assets/monk.png');
+      const image2 = await loadImage('../assets/monk.png');
+
+      loadTexture(gl, program, image1, 'uTexture1', 0);
+      loadTexture(gl, program, image2, 'uTexture2', 1);
+
+      drawScene(gl, program, 'vTexCoord', 2, shaderInfo.fsize);
+      drawScene(gl, program, 'aPosition', 2, shaderInfo.fsize);
       
       gl.useProgram(program);
       // 清空画布，设置背景色
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       // 清空颜色缓存区
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINT, 0, 1);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, shaderInfo.n);
     }
 
     function main() {
@@ -82,20 +140,30 @@
       const gl = canvas.getContext('webgl');
 
       const vertex = `
+        attribute vec4 aPosition;
+        attribute vec2 aTexCoord;
+        varying vec2 vTexCoord;
+
         void main() {
-          gl_PointSize = 10.0;
-          gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+          gl_Position = aPosition;
+          vTexCoord = aTexCoord;
         }
       `;
 
       const fragment = `
+        precision mediump float;
+        uniform sampler2D uTexture1;
+        uniform sampler2D uTexture2;
+        varying vec2 vTexCoord;
+
         void main() {
-          gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+          vec4 color1 = texture2D(uTexture1,vTexCoord);
+          vec4 color2 = texture2D(uTexture2,vTexCoord);
+          gl_FragColor = color2;
         }
       `;
 
       render(gl, vertex, fragment);
-      
     }
 
     main();
