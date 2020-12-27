@@ -9,17 +9,6 @@
   <canvas width="400" height="400"></canvas>
   <script>
 
-    function loadImage(src) {
-      return new Promise(resolve => {
-        const image = new Image();
-        image.crossOrigin = 'anonymous';
-        image.src = src;
-        image.onload = () => {
-          resolve(image);
-        }
-      })
-    }
-
     // 加载着色器
     function loadShader(gl, type, source) {
       const shader = gl.createShader(type);
@@ -48,7 +37,8 @@
         throw new Error(`着色器程序链接失败：${gl.getProgramInfoLog(program)}`);
       }
 
-      return program;
+      gl.useProgram(program);
+      gl.program = program;
     }
 
     // 初始化缓冲区数据
@@ -62,30 +52,23 @@
 
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-      
-      return {
-        position: vertexBuffer,
-        fsize,
-        n
-      }
-    }
 
-    // 将缓冲区数据写入shader着色器程序中
-    function drawScene(gl, program, varible, index, size) {
+      const a_position = gl.getAttribLocation(gl.program, 'aPosition');
+      gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, fsize*4.0, fsize*2);
+      gl.enableVertexAttribArray(a_position);
 
-      const pos = gl.getAttribLocation(program, varible);
-
-      // 开启访问变量vTexCoord
-      gl.vertexAttribPointer(pos, index, gl.FLOAT, false, size*4.0, size*2.0);
-      gl.enableVertexAttribArray(pos);
-
+      const a_texCoord = gl.getAttribLocation(gl.program, 'aTexCoord');
+      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, fsize*4.0, 0);
+      gl.enableVertexAttribArray(a_texCoord);
     }
 
     // 加载纹理
-    function loadTexture(gl, program, imageSource, name, index) {
+    function loadTexture(gl, sampler, imageSource, index) {
       const texture = gl.createTexture();
 
-      if (index == 0){
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+      if (index === 0){
           gl.activeTexture(gl.TEXTURE0);
       } else {
           gl.activeTexture(gl.TEXTURE1);
@@ -98,41 +81,57 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource);
-      const locations = gl.getUniformLocation(program, name);
 
-      gl.uniform1i(locations, index);
+      gl.uniform1i(sampler, index);
 
-      return texture;
+      if (loaded0 && loaded1) {
+        draw(gl);
+      }
+    }
+
+    let loaded0 = false, loaded1 = false;
+    function loadImage(src, gl, sampler, index, n) {
+      return new Promise(resolve => {
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.src = src;
+        image.onload = () => {
+          if (index === 0) {
+            loaded0 = true;
+          } else {
+            loaded1 = true;
+          }
+          loadTexture(gl, sampler, image, index);
+        }
+      })
+    }
+
+    function draw(gl) {
+      // 清空画布，设置背景色
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      // 清空颜色缓存区
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
     // 绘制
     async function render(gl, vertex, fragment) {
-      const program = initShader(gl, vertex, fragment);
+      initShader(gl, vertex, fragment);
 
       const buffer = new Float32Array([
         -0.5, 0.5, 0.0, 1.0,
         -0.5,-0.5, 0.0, 0.0,
         0.5, 0.5, 1.0, 1.0,
-        0.5,-0.5, 1.0, 0.0
+        0.5, -0.5, 1.0, 0.0
       ]);
 
-      const shaderInfo = initBufferData(gl, buffer);
+      initBufferData(gl, buffer);
 
-      const image1 = await loadImage('../assets/monk.png');
-      const image2 = await loadImage('../assets/monk.png');
+      const u_sampler1 = gl.getUniformLocation(gl.program, 'uTexture1');
+      const u_sampler2 = gl.getUniformLocation(gl.program, 'uTexture2');
 
-      loadTexture(gl, program, image1, 'uTexture1', 0);
-      loadTexture(gl, program, image2, 'uTexture2', 1);
-
-      drawScene(gl, program, 'vTexCoord', 2, shaderInfo.fsize);
-      drawScene(gl, program, 'aPosition', 2, shaderInfo.fsize);
-      
-      gl.useProgram(program);
-      // 清空画布，设置背景色
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      // 清空颜色缓存区
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, shaderInfo.n);
+      loadImage('../assets/cloth.png', gl, u_sampler1, 0, 4);
+      loadImage('../assets/pattern.png', gl, u_sampler2, 1, 4);
     }
 
     function main() {
@@ -159,7 +158,7 @@
         void main() {
           vec4 color1 = texture2D(uTexture1,vTexCoord);
           vec4 color2 = texture2D(uTexture2,vTexCoord);
-          gl_FragColor = color2;
+          gl_FragColor = color1 * color2;
         }
       `;
 
