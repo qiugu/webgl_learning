@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像处理</title>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        function loadImage(src) {
+            const image = new Image();
+            image.crossOrigin = 'anonymous'
+            return new Promise(resolve => {
+                image.onload = () => {
+                    resolve(image);
+                }
+                image.src = src;
+            })
+        }
+
+        (
+            async function() {
+                const img = await loadImage('https://p2.ssl.qhimg.com/d/inn/4b7e384c55dc/girl1.jpg');
+                const { width, height } = img;
+                const canvas = document.getElementById('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                for (let i = 0; i < width * height * 4; i++) {
+                    const r = data[i],
+                    g = data[i+1],
+                    b = data[i+2],
+                    a = data[i+3];
+                    // 加权平均
+                    const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    data[i] = v;
+                    data[i+1] = v;
+                    data[i+2] = v;
+                    data[i+3] = a;
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+            }
+        )()
+
+    </script>
+</body>
+</html>
