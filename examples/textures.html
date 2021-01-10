@@ -48,17 +48,17 @@
 
       const n = 4;
 
-      const fsize = vertexBuffer.BYTES_PER_ELEMENT;
+      const fsize = buffer.BYTES_PER_ELEMENT;
 
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
 
       const a_position = gl.getAttribLocation(gl.program, 'aPosition');
-      gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, fsize*4.0, fsize*2);
+      gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, fsize*4.0, 0);
       gl.enableVertexAttribArray(a_position);
 
       const a_texCoord = gl.getAttribLocation(gl.program, 'aTexCoord');
-      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, fsize*4.0, 0);
+      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, fsize*4.0, fsize*2);
       gl.enableVertexAttribArray(a_texCoord);
     }
 
@@ -119,10 +119,10 @@
       initShader(gl, vertex, fragment);
 
       const buffer = new Float32Array([
-        -0.5, 0.5, 0.0, 1.0,
-        -0.5,-0.5, 0.0, 0.0,
-        0.5, 0.5, 1.0, 1.0,
-        0.5, -0.5, 1.0, 0.0
+        -1.0, 1.0, 0.0, 1.0,
+        -1.0,-1.0, 0.0, 0.0,
+        1.0, 1.0, 1.0, 1.0,
+        1.0, -1.0, 1.0, 0.0
       ]);
 
       initBufferData(gl, buffer);
