@@ -6,6 +6,152 @@
   <title>Document</title>
 </head>
 <body>
-  
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <script>
+    let currAngle = 0.0;
+    let curScale = 1.0;
+    const ANGLE_STEP = 45;
+    const SCALE_STEP = 0.1;
+    let last = Date.now();
+    const canvas = document.getElementById('canvas');
+    const gl = canvas.getContext('webgl');
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+    const vertexSource = `
+      attribute vec4 a_Position;
+      uniform mat4 u_Matrix4;
+      uniform mat4 u_ScaleMat4;
+
+      void main() {
+        gl_Position = u_Matrix4 * u_ScaleMat4 * a_Position;
+      }
+    `;
+
+    const fragmentSource = `
+      precision mediump float;
+
+      void main() {
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+      }
+    `;
+
+    const data = new Float32Array([
+      0.0, 0.5, 0.0, 1.0,
+      -0.5, -0.5, 0.0, 1.0,
+      0.5, -0.5, 0.0, 1.0
+    ]);
+
+    const initRad = currAngle * Math.PI / 180;
+    const initRotateMatrix = new Float32Array([
+      Math.cos(initRad), Math.sin(initRad), 0.0, 0.0,
+      -Math.sin(initRad), Math.cos(initRad), 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ]);
+    const initScaleMatrix = new Float32Array([
+      curScale, 0.0, 0.0, 0.0,
+      0.0, curScale, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 1.0
+    ]);
+
+    const program = initShader(vertexSource, fragmentSource);
+
+    loadData();
+
+    draw();
+    
+    tick();
+
+    function initShader(vs, fs) {
+      const vertexShader = loadShader(gl.VERTEX_SHADER, vs);
+      const fragmentShader = loadShader(gl.FRAGMENT_SHADER, fs);
+
+      const program = gl.createProgram();
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+
+      gl.useProgram(program);
+
+      return program;
+    }
+
+    function loadShader(type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+
+      return shader;
+    }
+
+    function loadData() {
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+      const a_Position = gl.getAttribLocation(program, 'a_Position');
+      gl.vertexAttribPointer(
+        a_Position, 4, 
+        gl.FLOAT, 
+        false, 
+        Float32Array.BYTES_PER_ELEMENT * 4, 
+        0
+      );
+      gl.enableVertexAttribArray(a_Position);
+
+      const u_Matrix4 = gl.getUniformLocation(program, 'u_Matrix4');
+      gl.uniformMatrix4fv(u_Matrix4, false, initRotateMatrix);
+
+      const u_ScaleMat4 = gl.getUniformLocation(program, 'u_ScaleMat4');
+      gl.uniformMatrix4fv(u_ScaleMat4, false, initScaleMatrix);
+    }
+
+    function draw() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    function tick() {
+      const now = Date.now();
+      const distance = now - last;
+      const angle = (currAngle + (distance * ANGLE_STEP) / 1000.0) % 360;
+      currAngle = angle;
+      const rad = angle * Math.PI / 180;
+
+      const scale = (curScale + (distance * SCALE_STEP) / 1000.0) % 1.0;
+      curScale = scale;
+
+      last = now;
+
+      const cosB = Math.cos(rad);
+      const sinB = Math.sin(rad);
+
+      const rotateMatrix = new Float32Array([
+        cosB, sinB, 0.0, 0.0,
+        -sinB, cosB, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      ]);
+
+      const u_Matrix4 = gl.getUniformLocation(program, 'u_Matrix4');
+      gl.uniformMatrix4fv(u_Matrix4, false, rotateMatrix);
+
+      const scaleMatrix = new Float32Array([
+        scale, 0.0, 0.0, 0.0,
+        0.0, scale, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      ]);
+
+      const u_ScaleMat4 = gl.getUniformLocation(program, 'u_ScaleMat4');
+      gl.uniformMatrix4fv(u_ScaleMat4, false, scaleMatrix);
+
+      draw();
+
+      window.requestAnimationFrame(tick);
+    }
+  </script>
 </body>
 </html>
