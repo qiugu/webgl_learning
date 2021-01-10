@@ -6,7 +6,7 @@
   <title>Document</title>
 </head>
 <body>
-  <canvas width="400" height="400"></canvas>
+  <canvas width="500" height="750"></canvas>
   <script>
 
     // 加载着色器
@@ -54,11 +54,11 @@
       gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
 
       const a_position = gl.getAttribLocation(gl.program, 'aPosition');
-      gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, fsize*4.0, 0);
+      gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, fsize*4, 0);
       gl.enableVertexAttribArray(a_position);
 
       const a_texCoord = gl.getAttribLocation(gl.program, 'aTexCoord');
-      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, fsize*4.0, fsize*2);
+      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, fsize*4, fsize*2);
       gl.enableVertexAttribArray(a_texCoord);
     }
 
@@ -76,7 +76,7 @@
 
       gl.bindTexture(gl.TEXTURE_2D,texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -90,7 +90,7 @@
     }
 
     let loaded0 = false, loaded1 = false;
-    function loadImage(src, gl, sampler, index, n) {
+    function loadImage(src, gl, sampler, index) {
       return new Promise(resolve => {
         const image = new Image();
         image.crossOrigin = 'anonymous';
@@ -119,8 +119,8 @@
       initShader(gl, vertex, fragment);
 
       const buffer = new Float32Array([
-        -1.0, 1.0, 0.0, 1.0,
-        -1.0,-1.0, 0.0, 0.0,
+        -1.0, 1.0, 0.0, 1.0, // 前 2 位是位置坐标， 后 2 位是纹理坐标
+        -1.0, -1.0, 0.0, 0.0,
         1.0, 1.0, 1.0, 1.0,
         1.0, -1.0, 1.0, 0.0
       ]);
@@ -130,8 +130,8 @@
       const u_sampler1 = gl.getUniformLocation(gl.program, 'uTexture1');
       const u_sampler2 = gl.getUniformLocation(gl.program, 'uTexture2');
 
-      loadImage('../assets/cloth.png', gl, u_sampler1, 0, 4);
-      loadImage('../assets/pattern.png', gl, u_sampler2, 1, 4);
+      loadImage('../assets/cloth.png', gl, u_sampler1, 0);
+      loadImage('../assets/pattern.png', gl, u_sampler2, 1);
     }
 
     function main() {
