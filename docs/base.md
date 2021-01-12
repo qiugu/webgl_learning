@@ -1,8 +1,10 @@
 # WebGL基础
 
+![alt](./base.png)
+
 ## 1. 获取WebGL上下文
 
-其实就是创建WebGLRenderingContext对象
+其实就是创建`WebGLRenderingContext`对象，和`canvas2D`类似，直接通过`getContext`来获取WebGL上下文
 
 ```Javascript
 const gl = canvas.getContext('webgl', options);
@@ -19,23 +21,49 @@ const gl = canvas.getContext('webgl', options);
 
 ## 2. 初始化着色器
 
+着色器简单来说就是给GPU执行的程序，使用GLSL语言编写，这种语言是一种类C的的强类型语言。
+
 着色器包含两类
 
 1. 顶点着色器
 2. 片元着色器
 
-顶点着色器控制点的位置和大小，片元着色器控制点的颜色。
-
-着色器使用GLSL语言编写，它是一种类C的的强类型语言。目前使用它来获取数据主要有四种类型
+顶点着色器控制点的位置和大小，片元着色器控制点的颜色。我们可以通过WebGL的API来向着色器中传递四种类型的数据：
 
 1. attribute 一般用来存储顶点坐标数据
 2. uniform 全局变量
 3. texture 存储图像数据
 4. varying 从顶点着色器给片元着色器传值的方式
 
-涉及到了两个类WebGLShader类和WebGLProgram类
+在GLSL中还包括一些常用的内置的变量，目前用到的有下面几种：
 
-首先来看看创建WebGLShader
+1. gl_Position 顶点着色器中使用，表示图形的坐标
+2. gl_PointSize 顶点着色器中使用，表示图形的大小
+3. gl_FragColor 片元着色器中使用，表示要渲染的颜色
+
+来看一个简单的着色器GLSL的代码就能明白了：
+
+```c
+// 顶点着色器
+attribute vec4 a_Position;
+
+void main() {
+    gl_Position = a_Position;
+    gl_PointSize = 10.0;
+}
+
+// 片元着色器
+// 这里必须要定义数据精度
+precision mediump float;
+
+void main() {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
+```
+
+光有着色器还不能进行绘图，因为GPU并不认识着色器，所以我们需要将着色器组织起来，形成一个着色程序来交给GPU执行，这里就涉及到了两个类`WebGLShader`类和`WebGLProgram`类。
+
+WebGLShader就是我们说的着色器，来看看如何创建WebGLShader：
 
 ### 创建shader对象
 

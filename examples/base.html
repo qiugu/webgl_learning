@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>WebGL基础</title>
 </head>
 <body>
   <canvas width="400" height="400"></canvas>
@@ -49,15 +49,25 @@
     }
 
     function initBufferData(gl, program) {
+      const data = [];
+      for(let i = 0; i < 300; i++) {
+        data.push(Math.random());
+      }
+
+      const vertexes = new Float32Array(data);
+
+      const buffer = gl.createBuffer();
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.STATIC_DRAW);
 
       const a_Position = gl.getAttribLocation(program, 'a_Position');
-      gl.vertexAttrib3f(a_Position, 0.0, 0.0, 0.0);
+      gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 6, 0);
+      gl.enableVertexAttribArray(a_Position);
 
-      const a_PointSize = gl.getAttribLocation(program, 'a_PointSize');
-      gl.vertexAttrib1f(a_PointSize, 20.0);
-
-      const u_FragColor = gl.getUniformLocation(program, 'u_FragColor');
-      gl.uniform4f(u_FragColor, 1.0, 0.0, 0.0, 1.0);
+      const u_Color = gl.getUniformLocation(program, 'u_Color');
+      gl.vertexAttribPointer(u_Color, 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 6, 8);
+      gl.enableVertexAttribArray(u_Color);
     }
 
     function draw(gl, vertexSource, fragmentSource) {
@@ -68,72 +78,33 @@
 
       const points = [], colors = [];
 
-      gl.canvas.addEventListener('mousedown', e => clicked(e, gl, points, colors, program));
-
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINTS, 0, 1);
-    }
-
-    function clicked(e, gl, points, colors, program) {
-      const clientX = e.clientX;
-      const clientY = e.clientY;
-
-      const canvas = gl.canvas;
-
-      const rect = e.target.getBoundingClientRect();
-
-      const x = ((clientX - rect.left) - (canvas.width / 2)) / (canvas.width / 2);
-      const y = ((canvas.height / 2) - (clientY - rect.top)) / (canvas.height / 2);
-
-      if (x >= 0.0 && y >= 0.0) {
-        colors.push([1.0, 0.0, 0.0, 1.0]);
-      } else if (x <= 0.0 && y <= 0.0) {
-        colors.push([0.0, 1.0, 0.0, 1.0]);
-      } else {
-        colors.push([0.0, 0.0, 1.0, 1.0]);
-      }
-
-      points.push({x, y});
-
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      for (let i = 0; i < points.length; i++) {
-        const x = points[i].x;
-        const y = points[i].y;
-        const rgba = colors[i];
-        const a_Position = gl.getAttribLocation(program, 'a_Position');
-        gl.vertexAttrib3f(a_Position, x, y, 0.0);
-
-        const u_FragColor = gl.getUniformLocation(program, 'u_FragColor');
-        gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
-        
-        gl.drawArrays(gl.POINTS, 0, 1);
-      }
+      gl.drawArrays(gl.POINTS, 0, 50);
     }
 
     function main() {
       const canvas = document.querySelector('canvas');
       const gl = canvas.getContext('webgl');
 
-      console.log(gl);
-
       const vertexSource = `
         attribute vec4 a_Position;
-        attribute float a_PointSize;
+        uniform vec4 u_Color;
+        varying vec4 v_Color;
 
         void main() {
           gl_Position = a_Position;
-          gl_PointSize = a_PointSize;
+          gl_PointSize = 20.0;
+          v_Color = u_Color;
         }
       `;
 
       const fragmentSource = `
         precision mediump float;
-        uniform vec4 u_FragColor;
+        varying vec4 v_Color;
 
         void main() {
-          gl_FragColor = u_FragColor;
+          gl_FragColor = v_Color;
         }
       `;
 
