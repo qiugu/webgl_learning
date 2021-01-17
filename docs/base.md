@@ -19,6 +19,8 @@ const gl = canvas.getContext('webgl', options);
 5. antialias 设置抗锯齿，硬件支持的话就会使用抗锯齿功能，默认为true
 6. preserveDrawingBuffer 保留上一帧的渲染，默认值为false，即不保留
 
+这里的选项一般不会用到，后面会在某些特殊场景下用到它来解决一些问题。
+
 ## 2. 初始化着色器
 
 着色器简单来说就是给GPU执行的程序，使用GLSL语言编写，这种语言是一种类C的的强类型语言。
@@ -149,6 +151,14 @@ const data = new Float32Array([0.5, 0.5]);
 gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 ```
 
+传递给类型化数组的参数就是普通的数组，里面的值就是要画的图形的一个坐标。这里简单介绍下WebGL的坐标系。
+
+WebGL的坐标和canvas2D的坐标系都是直角坐标系，区别就在于原点不同，canvas2D的坐标系是以画布的左上角为坐标原点，而WebGL则是画布中心为坐标原点，并且坐标取值范围是在`[-1, 1]`之间，所以上述代码中的`[0.5, 0.5]`就是指的右上角的区域一半的位置。
+
+![alt](./coords.jpeg)
+
+后面也会涉及到很多坐标转换的计算，这里先不去深入，只要知道WebGL的坐标原点位置即可。
+
 ### 从缓冲区中取出数据赋给着色器中的变量
 
 ```JavaScript
@@ -163,6 +173,8 @@ gl.enableVertexAttribAarry(a_Position);
 这里是将多个顶点数据一起赋值给着色器中的变量，如果只有一个顶点数据，也可以使用如下方法：
 
 ```JavaScript
+// 这里是一系列的类似方法
+// gl.vertexAttrib[1234]f，数字表示分量的个数
 gl.vertexAttrib4f(a_Position, 1.0, 1.0, 0.0, 1.0);
 ```
 
@@ -179,9 +191,9 @@ gl.clear(buffer);
 
 /*
  * buffer参数可以选择下面三种之一
- * gl.COLOR_BUFFER_BIT
- * gl.DEPTH_BUFFER_BIT
- * gl.STENCIL_BUFFER_BIT
+ * gl.COLOR_BUFFER_BIT 颜色缓冲区
+ * gl.DEPTH_BUFFER_BIT 深度缓冲区
+ * gl.STENCIL_BUFFER_BIT 模板缓冲区
  */
 ```
 
@@ -195,5 +207,15 @@ gl.clear(buffer);
  */
 gl.drawArrays(gl.POINTS, 0, 1);
 ```
+
+上面图元有以下几类，总结起来就是点、线、三角形这三类，不过细分的话，总共有下面几个值可以使用：
+
+1. gl.POINTS
+2. gl.LINES
+3. gl.LINE_STRIP
+4. gl.LINE_LOOP
+5. gl.TRIANGLES
+6. gl.TRIANGLE_STRIP
+7. gl.TRIANGLE_FAN
 
 所谓光栅化，就是用像素画出来的意思

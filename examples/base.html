@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebGL基础</title>
+  <title>WEBGL入门</title>
   <style>
     html, body {
       margin: 0;
@@ -15,6 +15,7 @@
 <body>
   <canvas id="canvas"></canvas>
   <script>
+    let gl = null;
     function loadShader(gl, type, source) {
       const shader = gl.createShader(type);
 
@@ -51,17 +52,17 @@
       }
 
       gl.useProgram(program);
+      gl.program = program;
 
       return program;
     }
 
-    function initBufferData(gl, program) {
+    function initBufferData(gl) {
       const data = [];
       for(let i = 0; i < 300; i++) {
         const coords = Math.random() > 0.5 ? Math.random() : (-1 * Math.random());
         data.push(coords);
       }
-      console.log(data);
 
       const vertexes = new Float32Array(data);
 
@@ -70,7 +71,7 @@
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.STATIC_DRAW);
 
-      const a_Position = gl.getAttribLocation(program, 'a_Position');
+      const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
       gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
       gl.enableVertexAttribArray(a_Position);
 
@@ -85,34 +86,57 @@
 
       initBufferData(gl, program);
 
-      const points = [], colors = [];
+      tick();
+    }
+
+    function tick() {
+      const mat3 = new Float32Array([
+        1.0, 0.0, 0.1,
+        0.0, 1.0, 0.1,
+        0.0, 0.0, 1.0
+      ]);
+      const u_Offset = gl.getUniformLocation(gl.program, 'u_Offset');
+      gl.uniformMatrix3fv(u_Offset, false, mat3);
 
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.POINTS, 0, 150);
+
+      // requestAnimationFrame(tick);
     }
 
     function main() {
       const canvas = document.querySelector('canvas');
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      const gl = canvas.getContext('webgl');
+      gl = canvas.getContext('webgl');
 
       const vertexSource = `
-        attribute vec4 a_Position;
+        attribute vec2 a_Position;
         uniform vec4 u_Color;
+        uniform mat3 u_Offset;
 
         void main() {
-          gl_Position = a_Position;
-          gl_PointSize = 5.0;
+          vec3 coord = vec3(a_Position, 0.0) * u_Offset;
+          gl_Position = vec4(coord, 1.0);
+          gl_PointSize = 15.0;
         }
       `;
 
       const fragmentSource = `
         precision mediump float;
 
+        float random (vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233)))* 43758.5453123);}
+
+        vec2 st = vec2(1.0,1.0);
+
         void main() {
-          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+          float dis = distance(gl_PointCoord, vec2(0.5,0.5));
+          if (dis < 0.5) {
+            gl_FragColor = vec4(random(st), random(st), random(st), 1.0);
+          } else {
+            discard;
+          }
         }
       `;
 
