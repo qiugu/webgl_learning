@@ -1,6 +1,6 @@
 # WebGL基础
 
-![alt](./base.png)
+![alt](../assets/base.png)
 
 ## 1. 获取WebGL上下文
 
@@ -155,7 +155,7 @@ gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 
 WebGL的坐标和canvas2D的坐标系都是直角坐标系，区别就在于原点不同，canvas2D的坐标系是以画布的左上角为坐标原点，而WebGL则是画布中心为坐标原点，并且坐标取值范围是在`[-1, 1]`之间，所以上述代码中的`[0.5, 0.5]`就是指的右上角的区域一半的位置。
 
-![alt](./coords.jpeg)
+![alt](../assets/coords.jpeg)
 
 后面也会涉及到很多坐标转换的计算，这里先不去深入，只要知道WebGL的坐标原点位置即可。
 
@@ -218,4 +218,34 @@ gl.drawArrays(gl.POINTS, 0, 1);
 6. gl.TRIANGLE_STRIP
 7. gl.TRIANGLE_FAN
 
-所谓光栅化，就是用像素画出来的意思
+我们传入四个点[(-0.5, 0.5), (-0.5, -0.5), (0.5, -0.5), (0.5, 0.5)]来理解上面这些图元的意思。利用上面所学的类型化数组传入坐标信息
+
+```JavaScript
+// 生成坐标数据
+const coords = new Float32Array([
+    -0.5, 0.5, 
+    -0.5, -0.5, 
+    0.5, -0.5, 
+    0.5, 0.5
+]);
+
+// 创建缓冲区并绑定坐标数据
+const buffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.bufferData(gl.ARRAY_BUFFER, coords, gl.STATIC_DRAW);
+
+// 将缓冲区数据读取到program中
+const a_Position = gl.getAttribLocation(program, 'a_Position');
+gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 4 * 2, 0);
+gl.enableVertexAttribArray(a_Position);
+```
+
+然后分别按照上面的图元进行绘制
+
+![draw](../assets/drawMode.png)
+
+可以看到点、线、三角形都是比较好理解，需要注意这里提供了四个点，但是`gl.TRIAGNLES`只绘制了三个顶点，因为剩下的一个点已经无法组成三角形了，所以就被忽略了，同理`gl.LIINES`也是一样，如果提供了三个点，那么剩下的那个点也会被忽略掉。
+
+再看带[strip]的图元，会共用顶点，[fan]也同样会共用顶点，只是共用的顶点位置不同，这里大家可以通过上面的示例自己敲一遍感受一下。
+
+好了，到此为止，你已经可以自己绘制出简单的WebGL图形了，上面的方法还有很多细节没有介绍到，后面学习到的时候会再去一一介绍。

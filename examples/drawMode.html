@@ -6,7 +6,7 @@
   <title>WEBGL图元</title>
 </head>
 <body>
-  <canvas width="700" height="700"></canvas>
+  <canvas width="760" height="200"></canvas>
   <script>
     // 加载着色器
     function loadShader(gl, type, source) {
@@ -51,7 +51,7 @@
       gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
 
       const a_position = gl.getAttribLocation(gl.program, 'a_Position');
-      gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, fsize*3, 0);
+      gl.vertexAttribPointer(a_position, 3, gl.FLOAT, true, fsize*3, 0);
       gl.enableVertexAttribArray(a_position);
     }
 
@@ -93,26 +93,123 @@
 
       initShader(gl, vertex, fragment);
 
-      let a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-      gl.vertexAttrib2f(a_Position, -0.86, 0.0);
+      // 生成坐标数据
+      const points = new Float32Array([
+          -0.9, 0.5, 0.0,
+          -0.9, -0.5, 0.0,
+          -0.7, -0.5, 0.0,
+          -0.7, 0.5, 0.0
+      ]);
 
-      render(gl, gl.POINTS, 0, 1);
+      initBufferData(gl, points);
+      render(gl, gl.POINTS, 0, 4);
 
       const lines = new Float32Array([
-        -0.7, 1.0, 0.0,
-        -0.6, 0.0, 0.0,
-        -0.5, 1.0, 0.0
+          -0.6, 0.5, 0.0,
+          -0.6, -0.5, 0.0,
+          -0.4, -0.5, 0.0,
+          -0.4, 0.5, 0.0
       ]);
+
       initBufferData(gl, lines);
-      render(gl, gl.LINES, 0, 3);
+      render(gl, gl.LINES, 0, 4);
+
+      const line_strip = new Float32Array([
+          -0.3, 0.5, 0.0,
+          -0.3, -0.5, 0.0,
+          -0.1, -0.5, 0.0,
+          -0.1, 0.5, 0.0
+      ]);
+
+      initBufferData(gl, line_strip);
+      render(gl, gl.LINE_STRIP, 0, 4);
+
+      const line_loop = new Float32Array([
+          -0.0, 0.5, 0.0,
+          -0.0, -0.5, 0.0,
+          0.2, -0.5, 0.0,
+          0.2, 0.5, 0.0
+      ]);
+
+      initBufferData(gl, line_loop);
+      render(gl, gl.LINE_LOOP, 0, 4);
 
       const triangles = new Float32Array([
-        0.0, 0.25, 0.0,
-        -0.25, 0.0, 0.0,
-        0.25, 0.0, 0.0
+          0.3, 0.5, 0.0,
+          0.3, -0.5, 0.0,
+          0.5, -0.5, 0.0,
+          0.5, 0.5, 0.0
       ]);
+
       initBufferData(gl, triangles);
-      render(gl, gl.TRIANGLES, 0, 3);
+      render(gl, gl.TRIANGLES, 0, 4);
+
+      const triangle_strip = new Float32Array([
+          0.6, 0.5, 0.0,
+          0.6, -0.5, 0.0,
+          0.8, -0.5, 0.0,
+          0.8, 0.5, 0.0
+      ]);
+
+      initBufferData(gl, triangle_strip);
+      render(gl, gl.TRIANGLE_STRIP, 0, 4);
+
+      const triangle_fan = new Float32Array([
+          0.9, 0.5, 0.0,
+          0.9, -0.5, 0.0,
+          1.0, -0.5, 0.0,
+          1.0, 0.5, 0.0
+      ]);
+
+      initBufferData(gl, triangle_fan);
+      render(gl, gl.TRIANGLE_FAN, 0, 4);
+
+      // let a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+      // gl.vertexAttrib2f(a_Position, -0.86, 0.0);
+
+      // render(gl, gl.POINTS, 0, 1);
+
+      // const lines = new Float32Array([
+      //   -0.9, 0.1, 0.0,
+      //   -0.2, 0.1, 0.0,
+      //   -0.9, 0.4, 0.0,
+      //   -0.2, 0.4, 0.0
+      // ]);
+      // initBufferData(gl, lines);
+      // render(gl, gl.LINES, 0, 4);
+
+      // const lines_loop = new Float32Array([
+      //   -0.9, -0.1, 0.0, // v1
+      //   -0.2, -0.1, 0.0, // v2
+      //   -0.9, -0.4, 0.0, // v3
+      //   -0.2, -0.4, 0.0, // v4
+      // ]);
+      // // v1-v2 v3-v4 v1-v4 v2-v3
+      // initBufferData(gl, lines_loop);
+      // render(gl, gl.LINE_LOOP, 0, 4);
+
+      // const lines_strip = new Float32Array([
+      //   0.9, 0.1, 0.0, // v1
+      //   0.2, 0.1, 0.0, // v2
+      //   0.9, 0.4, 0.0, // v3
+      //   0.2, 0.4, 0.0, // v4
+      // ]);
+      // // v1-v2 v2-v3 v3-v4
+      // initBufferData(gl, lines_strip);
+      // render(gl, gl.LINE_STRIP, 0, 4);
+
+      // const triangles = new Float32Array([
+      //   0.0, -1.0, 0.0, // v1
+      //   1.0, -0.0, 0.0, // v2
+      //   0.0, -0.0, 0.0, // v3
+      //   1.0, -1.0, 0.0, // v4
+      // ]);
+      // // triangle_fan
+      // // v1-v2-v3 v1-v4-v3
+      // // triangle_strip
+      // // v1-v2-v3 v4-v2-v1
+      // initBufferData(gl, triangles);
+      // render(gl, gl.TRIANGLE_STRIP, 0, 4);
     }
 
     main();
