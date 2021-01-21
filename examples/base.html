@@ -76,7 +76,7 @@
       gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.STATIC_DRAW);
 
       const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-      gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
+      gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
       gl.enableVertexAttribArray(a_Position);
 
       // const u_Color = gl.getUniformLocation(program, 'u_Color');
@@ -103,9 +103,14 @@
         0.0, 0.0, 1.0, 0.0,
         0.0, offsetY, 1.0, 0.0
       ]);
-      const u_Offset = gl.getUniformLocation(gl.program, 'u_Offset');
+      // const u_Offset = gl.getUniformLocation(gl.program, 'u_Offset');
       // gl.uniformMatrix4fv(u_Offset, false, mat4);
-      gl.uniform2f(u_Offset, 0.1, offsetY);
+      // gl.uniform2f(u_Offset, 0.1, offsetY);
+
+      const u_Offset = gl.getAttribLocation(gl.program, 'u_Offset');
+      // gl.vertexAttribPointer(u_Offset, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, Float32Array.BYTES_PER_ELEMENT * 2);
+      // gl.enableVertexAttribArray(u_Offset);
+      gl.vertexAttrib2f(u_Offset, Math.random(), offsetY);
 
       draw();
 
@@ -123,7 +128,7 @@
       const vertexSource = `
         attribute vec2 a_Position;
         uniform vec4 u_Color;
-        uniform vec2 u_Offset;
+        attribute vec2 u_Offset;
 
         void main() {
           vec4 coord = vec4(a_Position - u_Offset, 0.0, 1.0);
