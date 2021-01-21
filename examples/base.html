@@ -15,7 +15,8 @@
 <body>
   <canvas id="canvas"></canvas>
   <script>
-    let gl = null;
+    let gl = null, last = Date.now(), startPos = 0;
+    const STEP_DOWN = 1.0;
     function loadShader(gl, type, source) {
       const shader = gl.createShader(type);
 
@@ -59,12 +60,15 @@
 
     function initBufferData(gl) {
       const data = [];
-      for(let i = 0; i < 300; i++) {
-        const coords = Math.random() > 0.5 ? Math.random() : (-1 * Math.random());
+      let dist = 0;
+      for(let i = 0; i < 1200; i++) {
+        let coords = Math.random() > 0.5 ? Math.random() : (-1 * Math.random());
+
         data.push(coords);
       }
 
       const vertexes = new Float32Array(data);
+      console.log(vertexes);
 
       const buffer = gl.createBuffer();
 
@@ -80,29 +84,34 @@
       // gl.enableVertexAttribArray(u_Color);
     }
 
-    function draw(gl, vertexSource, fragmentSource) {
-
-      const program = initShaders(gl, vertexSource, fragmentSource);
-
-      initBufferData(gl, program);
-
-      tick();
+    function draw(vertexSource, fragmentSource) {
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.POINTS, 0, 300);
     }
 
+    let count = 0;
     function tick() {
-      const mat3 = new Float32Array([
-        1.0, 0.0, 0.1,
-        0.0, 1.0, 0.1,
-        0.0, 0.0, 1.0
+      const now = Date.now();
+      const dist = now - last;
+      const offsetY = (startPos + (dist / 1000 * STEP_DOWN)) % 2;
+      startPos = offsetY;
+      last = now;
+      const mat4 = new Float32Array([
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, offsetY, 1.0, 0.0
       ]);
       const u_Offset = gl.getUniformLocation(gl.program, 'u_Offset');
-      gl.uniformMatrix3fv(u_Offset, false, mat3);
+      // gl.uniformMatrix4fv(u_Offset, false, mat4);
+      gl.uniform2f(u_Offset, 0.1, offsetY);
 
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.POINTS, 0, 150);
+      draw();
 
-      // requestAnimationFrame(tick);
+      // if(count > 10) return;
+      // count++;
+      requestAnimationFrame(tick);
     }
 
     function main() {
@@ -114,12 +123,12 @@
       const vertexSource = `
         attribute vec2 a_Position;
         uniform vec4 u_Color;
-        uniform mat3 u_Offset;
+        uniform vec2 u_Offset;
 
         void main() {
-          vec3 coord = vec3(a_Position, 0.0) * u_Offset;
-          gl_Position = vec4(coord, 1.0);
-          gl_PointSize = 15.0;
+          vec4 coord = vec4(a_Position - u_Offset, 0.0, 1.0);
+          gl_Position = coord;
+          gl_PointSize = 5.0;
         }
       `;
 
@@ -140,7 +149,13 @@
         }
       `;
 
-      draw(gl, vertexSource, fragmentSource);
+      initShaders(gl, vertexSource, fragmentSource);
+
+      initBufferData(gl);
+
+      draw();
+
+      tick();
     }
 
     main();
