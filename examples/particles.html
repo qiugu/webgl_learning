@@ -75,7 +75,7 @@
         0.0, 1.0
       ];
 
-      const vertexes = new Float32Array(rect);
+      const vertexes = new Float32Array(vert);
 
       const buffer = gl.createBuffer();
 
@@ -83,12 +83,12 @@
       gl.bufferData(gl.ARRAY_BUFFER, vertexes, gl.STATIC_DRAW);
 
       const a_Position = gl.getAttribLocation(gl.program, 'a_position');
-      gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+      gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(a_Position);
 
-      const a_texCoord = gl.getAttribLocation(gl.program, 'a_texCoord');
-      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, vertexes.BYTES_PER_ELEMENT * 2);
-      gl.enableVertexAttribArray(a_texCoord);
+      // const a_texCoord = gl.getAttribLocation(gl.program, 'a_texCoord');
+      // gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, vertexes.BYTES_PER_ELEMENT * 2);
+      // gl.enableVertexAttribArray(a_texCoord);
 
       return vertexes.length;
     }
@@ -180,7 +180,7 @@
       triangles.forEach(tri => {
         tri.u_time = (performance.now() - tri.startTime) / 1000;
         setUniforms(gl, tri);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
       });
 
       triangles = triangles.filter(tri => {
@@ -240,7 +240,7 @@
             0.0, 1.0, 1.0
           );
           vec3 translate = randomTranslate * vec3(a_position, 1.0);
-          vec3 pos = translateMatrix * rotateMatrix * scaleMatrix * translate;
+          vec3 pos = translateMatrix * scaleMatrix * rotateMatrix * translate;
           gl_Position = vec4(pos, 1.0);
           vp = p;
           v_texCoord = a_texCoord;
@@ -250,16 +250,16 @@
       const fragmentSource = `
         precision mediump float;
 
-        // uniform vec4 u_color;
+        uniform vec4 u_color;
         uniform sampler2D u_sampler;
         varying vec2 v_texCoord;
         varying float vp;
 
         void main() {
-          // gl_FragColor.xyz = u_color.xyz;
-          // gl_FragColor.a = 1.0;
+          gl_FragColor.xyz = u_color.xyz;
+          gl_FragColor.a = 1.0;
           // gl_FragColor.a = (1.0 - vp) * u_color.a;
-          gl_FragColor = texture2D(u_sampler, v_texCoord);
+          // gl_FragColor = texture2D(u_sampler, v_texCoord);
         }
       `;
 
