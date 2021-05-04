@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGL入门</title>
+  <style>
+    canvas {
+      width: 500px;
+      height: 500px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas width="500" height="500"></canvas>
+  <script>
+    const c = document.querySelector('canvas');
+    const gl = c.getContext('webgl');
+    // console.log(gl.canvas.width, gl.canvas.height);
+
+    // 顶点着色器源码
+    const vertexSource = `
+      attribute vec2 a_Position;
+      attribute vec2 a_TexCoord;
+      uniform float u_Resolution;
+      varying vec2 v_TexCoord;
+
+      void main() {
+        // 将屏幕坐标转换为0,1
+        vec2 zeroToOne = a_Position / u_Resolution;
+
+        // 将0,1转换为0,2
+        vec2 zeroToTwo = zeroToOne * 2.0;
+
+        // 将0,2转换为-1,1，也就是裁剪坐标
+        vec2 clipSpace = zeroToTwo - 1.0;
+
+        // gl_Position = vec4(clipSpace, 0.0, 1.0);
+        // 翻转y轴
+        gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
+        v_TexCoord = a_TexCoord;
+      }
+    `;
+
+    // 片段着色器源码
+    const fragmentSource = `
+      precision mediump float;
+      uniform vec3 u_Color;
+      uniform sampler2D u_Texture;
+      varying vec2 v_TexCoord;
+
+      void main() {
+        // gl_FragColor = vec4(u_Color, 1.0);
+        gl_FragColor = texture2D(u_Texture, v_TexCoord);
+      }
+    `;
+
+    // 1. 创建顶点着色器和片元着色器
+    // 创建顶点着色器
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    // 创建片元着色器
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    // 把源码注入到对应的着色器中
+    gl.shaderSource(vertexShader, vertexSource);
+    gl.shaderSource(fragmentShader, fragmentSource);
+    // 编译着色器代码
+    gl.compileShader(vertexShader);
+    gl.compileShader(fragmentShader);
+    // 判断着色器是否创建成功了
+    // console.log(gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS));
+    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+      console.error(`shader compile failed: ${gl.getShaderInfoLog(vertexShader)}`);
+      gl.deleteShader(vertexShader);
+    }
+
+    // 2. 创建着色程序，也就是顶点着色器和片元着色器组成的给GPU执行的程序
+    // 创建一个空的着色程序
+    const program = gl.createProgram();
+    // 将上面创建的着色器注入到程序中
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    // 链接程序
+    gl.linkProgram(program);
+    // 判断程序是否创建成功
+    // console.log(gl.getProgramParameter(program, gl.LINK_STATUS));
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error(`program created failed: ${gl.getProgramInfoLog(program)}`);
+      gl.deleteProgram(program);
+    }
+
+    // 3. 往着色程序中注入glsl需要的变量
+    // 初始化缓冲器，用来存放顶点数据
+    const buffer = gl.createBuffer();
+    // 初始化顶点数据，顶点数据需要使用类型化数组
+    // 定义了裁剪空间的坐标
+    const data = new Float32Array([
+      -1, 1, 0, 1,
+      -1, -1, 0, 0,
+      1, -1, 1, 0,
+      1, 1, 1, 1
+    ]);
+    // 定义屏幕空间的坐标
+    const printData = new Float32Array([
+      -500, 500, 0, 1,
+      -500, -500, 0, 0,
+      500, -500, 1, 0,
+      500, 500, 1, 1
+    ]);
+    const size = data.BYTES_PER_ELEMENT;
+    // 把上面创建好的缓冲绑定到一个节点上
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    // 再把创建好的数据绑定到刚刚的节点上
+    gl.bufferData(gl.ARRAY_BUFFER, printData, gl.STATIC_DRAW);
+    // 在使用传入的数据之前，需要指明使用的着色程序
+    gl.useProgram(program);
+    // 获取顶点着色器中需要的变量的索引
+    const a_Position = gl.getAttribLocation(program, 'a_Position');
+    // 开启顶点变量
+    gl.enableVertexAttribArray(a_Position);
+    // 设置着色程序如何读取缓冲数据
+    // size表示一个顶点中包含几个分量，此例中包含了两种类型的数据，一种是位置坐标，一种则是纹理坐标
+    // strike表示两个顶点之间的距离，以字节为单位
+    // offset表示读取缓冲时从什么位置开始读取，以字节为单位
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 4 * size, 0);
+    // 完了之后再给片元着色器设置u_Color
+    // 获取该变量在程序中的索引
+    const u_Color = gl.getUniformLocation(program, 'u_Color');
+    gl.uniform3f(u_Color, 1.0, 0.0, 0.0);
+
+    // 设置屏幕分辨率
+    const u_Resolution = gl.getUniformLocation(program, 'u_Resolution');
+    gl.uniform1f(u_Resolution, 500.0);
+
+    // 3. 如果存在纹理对象，则要进行设置纹理对象
+    const img = new Image();
+    img.crossOrigin = '';
+    img.src = '../../assets/test.jpg';
+    img.onload = () => {
+      // console.log(img);
+      // document.body.appendChild(img);
+      // 创建空的纹理对象
+      const texture = gl.createTexture();
+      // 翻转y轴像素
+      // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      // 激活0号纹理对象
+      gl.activeTexture(gl.TEXTURE0);
+      // 绑定纹理到2D的节点上
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      // 设置纹理的相关参数
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      // 设置纹理的像素资源，可以是HTMLImageElement、ImageData、HTMLCanvasELement、HTMLVideoElement等
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+      // 获取顶点着色器中需要的变量的索引
+      const a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
+      // 开启顶点变量
+      gl.enableVertexAttribArray(a_TexCoord);
+      // 设置着色程序如何读取缓冲数据
+      gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 4 * size, 2 * size);
+      // 获取纹理在程序中的索引
+      const loc = gl.getUniformLocation(program, 'u_Texture');
+      gl.uniform1i(loc, 0);
+
+      // 3. 进行绘制
+      // 设置绘制的视口
+      gl.viewport(0, 0, 500, 500);
+      // 清除画布颜色
+      gl.clearColor(0, 0, 0, 0);
+      // 清除颜色缓冲区
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      // console.log(gl.COLOR_BUFFER_BIT);
+      // 进行绘制
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+    }
+
+    // // 3. 进行绘制
+    // // 设置绘制的视口
+    // gl.viewport(0, 0, 500, 500);
+    // // 清除画布颜色
+    // gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    // // 清除颜色缓冲区
+    // gl.clear(gl.COLOR_BUFFER_BIT);
+    // // console.log(gl.COLOR_BUFFER_BIT);
+    // // 进行绘制
+    // gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+  </script>
+</body>
+
+</html>
