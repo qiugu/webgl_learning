@@ -7,6 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGL入门</title>
   <style>
+    html, body {
+      margin: 0;
+    }
     canvas {
       width: 500px;
       height: 500px;
@@ -15,7 +18,7 @@
 </head>
 
 <body>
-  <canvas width="500" height="500"></canvas>
+  <canvas width="1500" height="1500"></canvas>
   <script>
     const c = document.querySelector('canvas');
     const gl = c.getContext('webgl');
@@ -38,10 +41,10 @@
         // 将0,2转换为-1,1，也就是裁剪坐标
         vec2 clipSpace = zeroToTwo - 1.0;
 
-        // gl_Position = vec4(clipSpace, 0.0, 1.0);
+        gl_Position = vec4(clipSpace, 0.0, 1.0);
         // 翻转y轴
-        gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
-        v_TexCoord = a_TexCoord;
+        // gl_Position = vec4(clipSpace * vec2(1, -1), 0.0, 1.0);
+        v_TexCoord = clipSpace;
       }
     `;
 
@@ -140,17 +143,17 @@
     img.src = '../../assets/test.jpg';
     img.onload = () => {
       // console.log(img);
-      // document.body.appendChild(img);
+      document.body.appendChild(img);
       // 创建空的纹理对象
       const texture = gl.createTexture();
       // 翻转y轴像素
-      // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
       // 激活0号纹理对象
       gl.activeTexture(gl.TEXTURE0);
       // 绑定纹理到2D的节点上
       gl.bindTexture(gl.TEXTURE_2D, texture);
       // 设置纹理的相关参数
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -169,7 +172,7 @@
 
       // 3. 进行绘制
       // 设置绘制的视口
-      gl.viewport(0, 0, 500, 500);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
       // 清除画布颜色
       gl.clearColor(0, 0, 0, 0);
       // 清除颜色缓冲区
