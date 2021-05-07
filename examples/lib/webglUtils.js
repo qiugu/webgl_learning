@@ -1321,6 +1321,7 @@
         createBuffersFromArrays: createBuffersFromArrays,
         createBufferInfoFromArrays: createBufferInfoFromArrays,
         createAttributeSetters: createAttributeSetters,
+        loadShader: loadShader,
         createProgram: createProgram,
         createProgramFromScripts: createProgramFromScripts,
         createProgramFromSources: createProgramFromSources,

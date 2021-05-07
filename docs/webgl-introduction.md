@@ -50,3 +50,11 @@ GPU 是由大量的小型处理单元构成的，可以保证每个单元并行�
 3. 光栅化：将上一步装配好的图形使用像素来表示。
 4. 片元着色器：光栅化以后，每个像素都会执行片元着色器中的程序，得到最终的颜色值。
 5. 测试与混合：这一阶段主要是 WebGL 内部进行了一些模版测试、深度测试，最后再与上一帧的数据进行混合。
+
+## 一些资料和demo
+
+1. [着色器示例](https://www.shadertoy.com/)
+2. [片段着色器入门指南](https://thebookofshaders.com/?lan=ch)
+3. [谷歌WebGL的示例](http://webglsamples.org/)
+4. [WebGL教程](https://webglfundamentals.org/)
+5. [WebGL官方文档](https://www.khronos.org/webgl/wiki/Main_Page)
