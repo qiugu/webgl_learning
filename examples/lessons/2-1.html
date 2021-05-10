@@ -89,6 +89,17 @@
       -0.5, -0.5,
       0.5, -0.5
     ]);
+
+    // 测试一下类型化数组
+    console.log(data);
+    // 这种是错误的
+    // console.log(data.set(2, 1), 'set');
+    console.log(data.set([2, 2], 2));
+    console.log(data.length, 'length');
+    console.log(data.BYTES_PER_ELEMENT, 'BYTES_PER_ELEMENT');
+    console.log(data.byteLength, 'byteLength');
+    console.log(data);
+
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 
     gl.useProgram(program);
