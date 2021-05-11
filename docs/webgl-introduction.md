@@ -58,3 +58,8 @@ GPU 是由大量的小型处理单元构成的，可以保证每个单元并行�
 3. [谷歌WebGL的示例](http://webglsamples.org/)
 4. [WebGL教程](https://webglfundamentals.org/)
 5. [WebGL官方文档](https://www.khronos.org/webgl/wiki/Main_Page)
+
+## 课后思考
+
+1. 如何绘制多个点
+2. 如何通过鼠标点击来绘制点

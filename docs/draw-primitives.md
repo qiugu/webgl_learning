@@ -59,9 +59,9 @@ gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
 - index就是attribute变量的地址
 - size就是缓冲区每个顶点分量个数，一般是1到4个
 - type数据类型
-  - gl.FLoat 浮点型 FLoat32Array
+  - gl.FLOAT 浮点型 FLoat32Array
   - gl.SHORT 短整型 Int16Array
-  - gl.Int 整型 Int32Array
+  - gl.INT 整型 Int32Array
   - gl.UNSIGNED_BYTE 无符号字节型 Uint8Array
   - gl.UNSIGNED_INT 无符号整型 Uint32Array
   - gl.UNSIGNED_SHORT 无符号短整型  Uint16Array
@@ -88,10 +88,54 @@ gl.drawArrays(mode, count, offset);
 
 1. gl.POINTS
 2. gl.LINES
+
+![](../assets/gl-lines.svg)
+
 3. gl.LINE_STRIP
+
+![](../assets/gl-line-strip.svg)
+
 4. gl.LINE_LOOP
+
+![](../assets/gl-line-loop.svg)
+
 5. gl.TRIANGLES
+
+![](../assets/gl-triangles.svg)
+
 6. gl.TRIANGLE_STRIP
+
+![](../assets/gl-triangle-strip.svg)
+
 7. gl.TRIANGLE_FAN
 
-## 绘制复杂图形
+![](../assets/gl-triangle-fan.svg)
+
+[图片来源](https://webglfundamentals.org/webgl/lessons/zh_cn/webgl-points-lines-triangles.html)
+
+## 平移、旋转和缩放
+
+### 仿射变换
+
+> 仿射变换就是线性变换+平移
+
+考虑如何在二维空间中平移一个点。
+
+假设存在某个点A的坐标为x,y，把它向右平移3个单位，那么可以得到平移后的坐标：
+
+```js
+x1 = x + 3;
+```
+
+那么很容易得到这么一个方程，假设点的坐标为x,y，沿x轴平移Tx单位，沿y轴平移Ty单位：
+
+```js
+x1 = x + Tx;
+y1 = y + Ty;
+```
+
+根据这个方程，就能知道如何平移一个图形。
+
+## 课后思考
+
+如何绘制正四边形、正五边形和正六边形
