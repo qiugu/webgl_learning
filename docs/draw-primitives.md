@@ -136,6 +136,37 @@ y1 = y + Ty;
 
 根据这个方程，就能知道如何平移一个图形。
 
+再来看旋转
+
+![](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d39c303ede934dfe922f6c467f47bff9~tplv-k3u1fbpfcp-watermark.image)
+
+假设 B 点旋转了θ度到 C 点，B 点与 X 轴的角度是α度，计算 C 点的坐标。
+
+利用正弦和余弦可以轻松得到以下的公式
+
+```js
+C.x = v * cos(α+θ);
+C.y = v * sin(α+θ);
+// 利用两角和公式
+C.x = v * cosαcosθ - v * sinαsinθ;
+C.y = v * cosαsinθ + v * cosθsinα;
+// 再来看B点的坐标，容易知道
+B.x = v * cosα;
+B.y = v * sinα;
+// 结合上面两式可知
+C.x = B.x * cosθ - B.y * sinθ;
+C.y = B.y * sinθ + B.x * cosθ;
+```
+
+这就解释了在 glsl 代码中所写
+
+```glsl
+vec2 pos = vec2(
+  a_Position.y * u_Rotation.y - a_Position.x * u_Rotation.x,
+  a_Position.x * u_Rotation.y + a_Position.y * u_Rotation.x
+);
+```
+
 ## 课后思考
 
 如何绘制正四边形、正五边形和正六边形
