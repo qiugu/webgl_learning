@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>旋转</title>
+  <title>缩放</title>
   <style>
     html, body {
       margin: 0;
@@ -39,18 +39,28 @@
   <div class="op">
     <div>
       <span>x</span>
-      <input min="-500" max="500" value="0" type="range" class="scaleX">
+      <input min="-500" max="500" value="0" type="range" class="translateX">
       <span class="xval"></span>
     </div>
     <div>
       <span>y</span>
-      <input min="-500" max="500" value="0" type="range" class="scaleY">
+      <input min="-500" max="500" value="0" type="range" class="translateY">
       <span class="yval"></span>
     </div>
     <div>
       <span>rotation</span>
-      <input min="0" max="360" value="0" type="range" class="scale">
-      <span class="scaleval"></span>
+      <input min="0" max="360" value="0" type="range" class="rotate">
+      <span class="rotateVal"></span>
+    </div>
+    <div>
+      <span>scaleX</span>
+      <input min="-5" max="5" step="0.01" value="1" type="range" class="scaleX">
+      <span class="scaleXVal"></span>
+    </div>
+    <div>
+      <span>scaleY</span>
+      <input min="-5" max="5" step="0.01" value="1" type="range" class="scaleY">
+      <span class="scaleYVal"></span>
     </div>
   </div>
   <script>
@@ -63,12 +73,17 @@
       attribute vec2 a_Position;
       uniform vec2 u_Translation;
       uniform vec2 u_Rotation;
+      uniform vec2 u_Scale;
 
       void main() {
+        // 缩放
+        vec2 scalePostion = a_Position * u_Scale;
+        // 旋转
         vec2 pos = vec2(
-          a_Position.y * u_Rotation.y - a_Position.x * u_Rotation.x,
-          a_Position.x * u_Rotation.y + a_Position.y * u_Rotation.x
+          scalePostion.x * u_Rotation.y + scalePostion.y * u_Rotation.x,
+          scalePostion.y * u_Rotation.y - scalePostion.x * u_Rotation.x
         );
+        // 平移
         gl_Position = vec4(pos + u_Translation, 0.0, 1.0);
       }
     `;
@@ -119,9 +134,9 @@
     // gl.deleteBuffer(buffer);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     const data = new Float32Array([
-      0.0, 0.5,
-      0.0, 0.0,
-      0.5, 0.0
+      20.0, 30.0,
+      20.0, 20.0,
+      30.0, 20.0
     ]);
 
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -129,13 +144,16 @@
     gl.useProgram(program);
     const a_Position = gl.getAttribLocation(program, 'a_Position');
     gl.enableVertexAttribArray(a_Position);
-    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, true, 0, 0);
 
     const u_Rotation = gl.getUniformLocation(program, 'u_Rotation');
     gl.uniform2f(u_Rotation, 0, 1);
 
     const u_Translation = gl.getUniformLocation(program, 'u_Translation');
     gl.uniform2f(u_Translation, 0.0, 0.0);
+
+    const u_Scale = gl.getUniformLocation(program, 'u_Scale');
+    gl.uniform2f(u_Scale, 1.0, 1.0);
 
     // 设置绘制的视口
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -146,9 +164,10 @@
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-    function drawScene(scale, translation) {
-      gl.uniform2fv(u_Rotation, scale);
+    function drawScene(rotation, translation, scale) {
+      gl.uniform2fv(u_Rotation, rotation);
       gl.uniform2fv(u_Translation, translation);
+      gl.uniform2fv(u_Scale, scale);
       // 清除画布颜色
       gl.clearColor(0, 0, 0, 0);
       // 清除颜色缓冲区
@@ -157,16 +176,24 @@
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
 
-    const x = document.querySelector('.scaleX');
+    const x = document.querySelector('.translateX');
     const xval = document.querySelector('.xval');
     xval.textContent = 0;
-    const y = document.querySelector('.scaleY');
+    const y = document.querySelector('.translateY');
     const yval = document.querySelector('.yval');
     yval.textContent = 0;
-    const scale = document.querySelector('.scale');
-    const scaleval = document.querySelector('.scaleval');
-    scaleval.textContent = 0;
+
+    const rotate = document.querySelector('.rotate');
+    const rotateVal = document.querySelector('.rotateVal');
+    rotateVal.textContent = 0;
     const scaleRad = [0, 1];
+
+    const scaleX = document.querySelector('.scaleX');
+    const scaleXVal = document.querySelector('.scaleXVal');
+    scaleXVal.textContent = 1;
+    const scaleY = document.querySelector('.scaleY');
+    const scaleYVal = document.querySelector('.scaleYVal');
+    scaleYVal.textContent = 1;
 
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -174,25 +201,39 @@
       xval.textContent = e.target.value;
       const normalizeX = e.target.value / width;
       const normalizeY = yval.textContent / height;
-      drawScene(scaleRad, [normalizeX, normalizeY]);
+      drawScene(scaleRad, [normalizeX, normalizeY], [scaleXVal.textContent, scaleYVal.textContent]);
     });
 
     y.addEventListener('input', e => {
       yval.textContent = e.target.value;
       const normalizeX = xval.textContent / width;
       const normalizeY = e.target.value / height;
-      drawScene(scaleRad, [normalizeX, normalizeY]);
+      drawScene(scaleRad, [normalizeX, normalizeY], [scaleXVal.textContent, scaleYVal.textContent]);
     });
 
-    scale.addEventListener('input', e => {
-      scaleval.textContent = e.target.value;
+    rotate.addEventListener('input', e => {
+      rotateVal.textContent = e.target.value;
       const deg = 360 - e.target.value;
       const rad = deg * Math.PI / 180;
       scaleRad[0] = Math.sin(rad);
       scaleRad[1] = Math.cos(rad);
       const normalizeX = xval.textContent / width;
       const normalizeY = yval.textContent / height;
-      drawScene(scaleRad, [normalizeX, normalizeY]);
+      drawScene(scaleRad, [normalizeX, normalizeY], [scaleXVal.textContent, scaleYVal.textContent]);
+    });
+
+    scaleX.addEventListener('input', e => {
+      scaleXVal.textContent = e.target.value;
+      const normalizeX = xval.textContent / width;
+      const normalizeY = yval.textContent / height;
+      drawScene(scaleRad, [normalizeX, normalizeY], [scaleXVal.textContent, scaleYVal.textContent]);
+    });
+
+    scaleY.addEventListener('input', e => {
+      scaleYVal.textContent = e.target.value;
+      const normalizeX = xval.textContent / width;
+      const normalizeY = yval.textContent / height;
+      drawScene(scaleRad, [normalizeX, normalizeY], [scaleXVal.textContent, scaleYVal.textContent]);
     })
 
   </script>
