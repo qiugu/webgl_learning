@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGL动画</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    /* canvas {
+      width: 100vw;
+      height: 100vh;
+    } */
+  </style>
+</head>
+
+<body>
+  <canvas width="500" height="500"></canvas>
+  <script>
+    const c = document.querySelector('canvas');
+    const gl = c.getContext('webgl');
+    // 顶点着色器源码
+    const vertexSource = `
+      attribute vec2 a_Position;
+      attribute vec2 a_TexCoord;
+      varying vec2 v_TexCoord;
+
+      void main() {
+        gl_Position = vec4(a_Position, 0.0, 1.0);
+        v_TexCoord = a_TexCoord;
+      }
+    `;
+
+    // 片段着色器源码
+    const fragmentSource = `
+      precision mediump float;
+      uniform sampler2D u_Texture;
+      uniform float fWidth;
+      uniform vec2 frame[3]; 
+      uniform int frameIndex;
+
+      varying vec2 v_TexCoord;
+
+      void main() {
+        vec2 uv = v_TexCoord;
+        for(int i = 0; i < 3; i++) {
+          uv.x = mix(frame[i].x, frame[i].y, v_TexCoord.x) / fWidth;
+          if (float(i) == mod(float(frameIndex), 3.0)) break;
+        }
+        gl_FragColor = texture2D(u_Texture, uv);
+      }
+    `;
+
+    const textureURL = 'https://p.ssl.qhimg.com/t01f265b6b6479fffc4.png';
+    // const textureURL = '../../assets/fire.png';
+
+    // 创建顶点着色器
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    // 创建片元着色器
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    // 把源码注入到对应的着色器中
+    gl.shaderSource(vertexShader, vertexSource);
+    gl.shaderSource(fragmentShader, fragmentSource);
+    // 编译着色器代码
+    gl.compileShader(vertexShader);
+    gl.compileShader(fragmentShader);
+    // 判断着色器是否创建成功了
+    // console.log(gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS));
+    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+      console.error(`shader compile failed: ${gl.getShaderInfoLog(vertexShader)}`);
+      gl.deleteShader(vertexShader);
+    }
+
+    // 创建一个空的着色程序
+    const program = gl.createProgram();
+    // 将上面创建的着色器注入到程序中
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    // 链接程序
+    gl.linkProgram(program);
+    // 判断程序是否创建成功
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error(`program created failed: ${gl.getProgramInfoLog(program)}`);
+      gl.deleteProgram(program);
+    }
+
+    const x = 200 / c.width;
+    const y = 200 / c.height;
+    const data = new Float32Array([
+      -x, y, 0, 1,
+      -x, -y, 0, 0,
+      x, -y, 1, 0,
+      x, y, 1, 1
+    ]);
+
+    // 初始化缓冲器，用来存放顶点数据
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    gl.useProgram(program);
+    const a_Position = gl.getAttribLocation(program, 'a_Position');
+    gl.enableVertexAttribArray(a_Position);
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+    const a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
+    gl.enableVertexAttribArray(a_TexCoord);
+    gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+
+    const fWidth = gl.getUniformLocation(program, 'fWidth');
+    gl.uniform1f(fWidth, 272.0);
+    const frame = gl.getUniformLocation(program, 'frame');
+    gl.uniform2fv(frame, [2, 88, 90, 176, 178, 264]);
+
+    const frameIndex = gl.getUniformLocation(program, 'frameIndex');
+    
+    let index = 0;
+    const img = new Image();
+    img.crossOrigin = '';
+    img.src = textureURL;
+    img.onload = () => {
+      // 创建空的纹理对象
+      const texture = gl.createTexture();
+      // document.body.appendChild(img);
+      // 翻转y轴像素
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      // 激活0号纹理对象
+      gl.activeTexture(gl.TEXTURE0);
+      // 绑定纹理到2D的节点上
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      // 设置纹理的相关参数
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      // 设置纹理的像素资源，可以是HTMLImageElement、ImageData、HTMLCanvasELement、HTMLVideoElement等
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+      // 获取纹理在程序中的索引
+      const loc = gl.getUniformLocation(program, 'u_Texture');
+      gl.uniform1i(loc, 0);
+
+      setInterval(() => {
+        index++;
+      }, 200);
+      
+      requestAnimationFrame(tick);
+    }
+
+    function tick() {
+      gl.uniform1i(frameIndex, index);
+      // 设置绘制的视口
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      // 清除画布颜色
+      gl.clearColor(0, 0, 0, 0);
+      // 清除颜色缓冲区
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      // 进行绘制
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+      requestAnimationFrame(tick);
+    }
+
+  </script>
+</body>
+
+</html>
