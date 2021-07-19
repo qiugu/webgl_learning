@@ -85,6 +85,8 @@
     // 绘制点
     gl.drawArrays(gl.POINTS, 0, 1);
 
+    c.addEventListener('click', e => clicked(e, gl, [], [], program));
+
     function clicked(e, gl, points, colors, program) {
       const clientX = e.clientX;
       const clientY = e.clientY;
@@ -116,7 +118,7 @@
         gl.vertexAttrib3f(a_Position, x, y, 0.0);
 
         const u_FragColor = gl.getUniformLocation(program, 'u_FragColor');
-        gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
+        gl.uniform3f(u_FragColor, rgba[0], rgba[1], rgba[2]);
         
         gl.drawArrays(gl.POINTS, 0, 1);
       }

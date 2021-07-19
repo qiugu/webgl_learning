@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>绘制曲线</title>
+</head>
+<body>
+  <canvas width="400" height="400"></canvas>
+  <script>
+    const c = document.querySelector('canvas');
+    const gl = c.getContext('webgl');
+    // console.log(gl.canvas.width, gl.canvas.height);
+
+    // 顶点着色器源码
+    const vertexSource = `
+        attribute vec4 a_Position;
+
+        void main() {
+          gl_Position = a_Position;
+          gl_PointSize = 40.0;
+        }
+    `;
+
+    // 片段着色器源码
+    const fragmentSource = `
+        precision mediump float;
+
+        void main() {
+          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+    `;
+
+    const imageVertex = `
+        attribute vec2 aPosition;
+        attribute vec2 aTexCoord;
+
+
+
+
+        varying vec2 vTexCoord;
+
+        void main () {
+          gl_Position = vec4(aPosition, 0.0, 1.0);
+          vTexCoord = aTexCoord;
+        }
+    `;
+
+    const imageFragment = `
+        precision mediump float;
+        uniform sampler2D uTexture;
+        uniform vec2 uPosition;
+
+        varying vec2 vTexCoord;
+
+        void main () {
+          vec2 st = gl_FragCoord.xy;
+          gl_FragColor = texture2D(uTexture, vTexCoord);
+        }
+    `;
+    // 创建一个背景图片的canvas
+    const imgVertexShader = gl.createShader(gl.VERTEX_SHADER);
+    const imgFragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(imgVertexShader, imageVertex);
+    gl.shaderSource(imgFragmentShader, imageFragment);
+    gl.compileShader(imgVertexShader);
+    gl.compileShader(imgFragmentShader);
+    const imgProgram = gl.createProgram();
+    gl.attachShader(imgProgram, imgVertexShader);
+    gl.attachShader(imgProgram, imgFragmentShader);
+    gl.linkProgram(imgProgram);
+
+    if (!gl.getProgramParameter(imgProgram, gl.LINK_STATUS)) {
+      console.error(`program created failed: ${gl.getProgramInfoLog(imgProgram)}`);
+      gl.deleteProgram(imgProgram);
+    }
+    
+    const img = new Image();
+    img.crossOrigin = '';
+    img.src = '../../assets/test.jpg';
+    img.onload = () => {
+      const texture = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+      gl.useProgram(imgProgram);
+      let buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      const data = new Float32Array([
+        -1, 1, 0, 1,
+        -1, -1, 0, 0,
+        1, -1, 1, 0,
+        1, 1, 1, 1
+      ]);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      const aPosition = gl.getAttribLocation(imgProgram, 'aPosition');
+      const aTexCoord = gl.getAttribLocation(imgProgram, 'aTexCoord');
+      gl.enableVertexAttribArray(aPosition);
+      gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+      gl.enableVertexAttribArray(aTexCoord);
+      gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, Float32Array.BYTES_PER_ELEMENT * 2);
+      const pos = gl.getUniformLocation(imgProgram, 'uTexture');
+      gl.uniform1i(pos, 0);
+      gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
+      // gl.disableVertexAttribArray(aPosition);
+      // gl.disableVertexAttribArray(aTexCoord);
+      // gl.deleteBuffer(buffer);
+      // gl.deleteProgram(imgProgram);
+      // gl.deleteShader(imgVertexShader);
+      // gl.deleteShader(imgFragmentShader);
+      // gl.deleteTexture(texture);
+    }
+
+    // 创建顶点着色器
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    // 创建片元着色器
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    // 把源码注入到对应的着色器中
+    gl.shaderSource(vertexShader, vertexSource);
+    gl.shaderSource(fragmentShader, fragmentSource);
+    // 编译着色器代码
+    gl.compileShader(vertexShader);
+    gl.compileShader(fragmentShader);
+    // 判断着色器是否创建成功了
+    // console.log(gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS));
+    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+      console.error(`shader compile failed: ${gl.getShaderInfoLog(vertexShader)}`);
+      gl.deleteShader(vertexShader);
+    }
+
+    // 创建一个空的着色程序
+    const program = gl.createProgram();
+    // 将上面创建的着色器注入到程序中
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    // 链接程序
+    gl.linkProgram(program);
+    // 判断程序是否创建成功
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error(`program created failed: ${gl.getProgramInfoLog(program)}`);
+      gl.deleteProgram(program);
+    }
+
+    let p = [], color = [];
+    let open = false;
+    c.addEventListener('mousedown', e => {
+      open = true;
+      c.style.cursor = 'crosshair';
+    });
+    c.addEventListener('mousemove', e => {
+      if (open) {
+        clicked(e, gl, p, color, program);
+      }
+    });
+    c.addEventListener('mouseup', e => {
+      open = false;
+      c.style.cursor = 'default';
+    });
+
+    function clicked(e, gl, points, colors, program) {
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+
+      const canvas = gl.canvas;
+
+      const rect = e.target.getBoundingClientRect();
+
+      const x = ((clientX - rect.left) - (canvas.width / 2)) / (canvas.width / 2);
+      const y = ((canvas.height / 2) - (clientY - rect.top)) / (canvas.height / 2);
+
+      if (x >= 0.0 && y >= 0.0) {
+        colors.push([1.0, 0.0, 0.0, 1.0]);
+      } else if (x <= 0.0 && y <= 0.0) {
+        colors.push([0.0, 1.0, 0.0, 1.0]);
+      } else {
+        colors.push([0.0, 0.0, 1.0, 1.0]);
+      }
+
+      points.push({x, y});
+
+      // gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(imgProgram);
+
+      for (let i = 0; i < points.length; i++) {
+        const x = points[i].x;
+        const y = points[i].y;
+        // const a_Position = gl.getAttribLocation(program, 'a_Position');
+        // gl.vertexAttrib2f(a_Position, x, y);
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+      }
+    }
+  </script>
+</body>
+</html>
