@@ -113,6 +113,11 @@ gl.drawArrays(mode, count, offset);
 
 [图片来源](https://webglfundamentals.org/webgl/lessons/zh_cn/webgl-points-lines-triangles.html)
 
+## 思考
+
+1. 如何绘制空心三角形
+2. 如何绘制正四边形、正五边形和正六边形
+
 ## 平移、旋转和缩放
 
 ### 仿射变换
@@ -170,5 +175,3 @@ vec2 pos = vec2(
 ## 使用矩阵进行变换
 
 ## 课后思考
-
-如何绘制正四边形、正五边形和正六边形
