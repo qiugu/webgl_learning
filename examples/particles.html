@@ -86,9 +86,9 @@
       gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
       gl.enableVertexAttribArray(a_Position);
 
-      // const a_texCoord = gl.getAttribLocation(gl.program, 'a_texCoord');
-      // gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, vertexes.BYTES_PER_ELEMENT * 2);
-      // gl.enableVertexAttribArray(a_texCoord);
+      const a_texCoord = gl.getAttribLocation(gl.program, 'a_texCoord');
+      gl.vertexAttribPointer(a_texCoord, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, vertexes.BYTES_PER_ELEMENT * 2);
+      gl.enableVertexAttribArray(a_texCoord);
 
       return vertexes.length;
     }

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shader</title>
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script>
+        const canvas = document.querySelector('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const gl = canvas.getContext('webgl');
+
+        const vertexSource = `
+            attribute vec2 aPosition;
+            attribute vec2 aTexCoord;
+
+            void main() {
+                gl_Position = vec4(aPosition, 0.0, 1.0);
+            }
+        `;
+
+        const fragmentSource = `
+            #ifdef GL_ES
+            precision mediump float;
+            #endif
+
+            uniform vec2 uResolution;
+            uniform vec2 uv;
+
+            float circle(in vec2 _st, in float _radius) {
+                vec2 dist = _st-uv;
+                return 1.0 - smoothstep(
+                    _radius-(_radius*0.01),
+                    _radius+(_radius*0.01),
+                    dot(dist,dist)*1000.0
+                );
+            }
+
+            void main() {
+                vec2 st = gl_FragCoord.xy / uResolution;
+                float circleColor = circle(st, 1.0);
+                vec4 color = vec4(0.0);
+                if (circleColor == 0.0) {
+                    color = vec4(1.0, 0.0, 0.0, 1.0);
+                } else {
+                    color = vec4(1.0, 1.0, 1.0, 0.0);
+                }
+                gl_FragColor = color;
+            }
+        `;
+
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+        gl.shaderSource(vertexShader, vertexSource);
+        gl.shaderSource(fragmentShader, fragmentSource);
+
+        gl.compileShader(vertexShader);
+        gl.compileShader(fragmentShader);
+        if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+            console.error(`shader compile failed: ${gl.getShaderInfoLog(fragmentShader)}`);
+        }        
+
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error(`program created failed: ${gl.getProgramInfoLog(program)}`);
+        }
+
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        const data = new Float32Array([
+           -1, 1,
+           -1, -1,
+           1, 1,
+           1, -1 
+        ]);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        gl.useProgram(program);
+        const aPosition = gl.getAttribLocation(program, 'aPosition');
+        gl.enableVertexAttribArray(aPosition);
+        gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+
+        const uResolution = gl.getUniformLocation(program, 'uResolution');
+        gl.uniform2f(uResolution, canvas.width, canvas.height);
+        const uv = gl.getUniformLocation(program, 'uv');
+        gl.uniform2f(uv, 0.5, 0.5);
+
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        const rect = canvas.getBoundingClientRect();
+        
+        canvas.addEventListener('mousemove', e => {
+            const clientX = e.clientX;
+            const clientY = e.clientY;
+
+            const x = clientX / (canvas.width);
+            const y = 1 - (clientY / (canvas.height));
+            gl.uniform2f(uv, x, y);
+
+            // gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        });
+    </script>
+</body>
+</html>
