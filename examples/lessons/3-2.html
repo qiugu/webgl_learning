@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL非固定帧动画1</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* canvas {
+      width: 100vw;
+      height: 100vh;
+    } */
+    </style>
+</head>
+
+<body>
+    <canvas width="500" height="500"></canvas>
+    <script>
+        const c = document.querySelector('canvas');
+        const gl = c.getContext('webgl');
+        // 顶点着色器源码
+        const vertexSource = `
+      attribute vec2 a_Position;
+      attribute vec2 a_TexCoord;
+      uniform float u_Rotation;
+      varying vec2 v_TexCoord;
+
+      void main() {
+        gl_PointSize = 1.0;
+        float c = cos(u_Rotation);
+        float s = sin(u_Rotation);
+        mat3 transformMatrix = mat3(
+            c, s, 0,
+            -s, c, 0,
+            0, 0, 1
+        );
+        vec3 pos = transformMatrix * vec3(a_Position, 0.0);
+        gl_Position = vec4(pos, 1.0);
+        v_TexCoord = a_TexCoord;
+      }
+    `;
+
+        // 片段着色器源码
+        const fragmentSource = `
+      precision mediump float;
+      uniform vec4 uColor;
+
+      varying vec2 v_TexCoord;
+
+      void main() {
+        gl_FragColor = uColor;
+      }
+    `;
+
+        // 创建顶点着色器
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        // 创建片元着色器
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        // 把源码注入到对应的着色器中
+        gl.shaderSource(vertexShader, vertexSource);
+        gl.shaderSource(fragmentShader, fragmentSource);
+        // 编译着色器代码
+        gl.compileShader(vertexShader);
+        gl.compileShader(fragmentShader);
+        // 判断着色器是否创建成功了
+        // console.log(gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS));
+        if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+            console.error(`shader compile failed: ${gl.getShaderInfoLog(vertexShader)}`);
+            gl.deleteShader(vertexShader);
+        }
+
+        // 创建一个空的着色程序
+        const program = gl.createProgram();
+        // 将上面创建的着色器注入到程序中
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        // 链接程序
+        gl.linkProgram(program);
+        // 判断程序是否创建成功
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error(`program created failed: ${gl.getProgramInfoLog(program)}`);
+            gl.deleteProgram(program);
+        }
+
+        const x = 200 / c.width;
+        const y = 200 / c.height;
+        const data = new Float32Array([
+            -x, y, 0, 1,
+            -x, -y, 0, 0,
+            x, -y, 1, 0,
+            x, y, 1, 1
+        ]);
+
+        // 初始化缓冲器，用来存放顶点数据
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        gl.useProgram(program);
+        const a_Position = gl.getAttribLocation(program, 'a_Position');
+        gl.enableVertexAttribArray(a_Position);
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+        const a_TexCoord = gl.getAttribLocation(program, 'a_TexCoord');
+        gl.enableVertexAttribArray(a_TexCoord);
+        gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 2 * Float32Array.BYTES_PER_ELEMENT);
+
+        const uColor = gl.getUniformLocation(program, 'uColor');
+        gl.uniform4f(uColor, 0.0, 1.0, 0.0, 1.0);
+        const rotation = gl.getUniformLocation(program, 'u_Rotation');
+        let rotationCount = 0.0;
+        gl.uniform1f(rotation, rotationCount);
+
+        function tick() {
+            rotationCount += 0.05;
+            gl.uniform1f(rotation, rotationCount);
+            // 设置绘制的视口
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            // 清除画布颜色
+            gl.clearColor(0, 0, 0, 0);
+            // 清除颜色缓冲区
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            // 进行绘制
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+            requestAnimationFrame(tick);
+        }
+        tick();
+    </script>
+</body>
+
+</html>
